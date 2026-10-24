@@ -1,7 +1,7 @@
 import React from 'react';
 import {AbsoluteFill} from 'remotion';
-import {C, FONT, FPS, HEIGHT, WIDTH} from '../theme';
-import {IN_OUT, OUT, SOFT, pop, prog} from '../ease';
+import {C, FONT, HEIGHT, WIDTH} from '../theme';
+import {IN_OUT, SOFT, pop, prog} from '../ease';
 import {LogoMark} from './Logo';
 
 /** Neon-Wisch über das Bild – verdeckt den harten Schnitt (Mitte des Wischs = Schnitt). */
@@ -23,9 +23,9 @@ export const BrandChip: React.FC<{frame: number; at: number; until: number}> = (
   const out = prog(frame, until, 0.25, SOFT);
   if (p <= 0 || out >= 1) return null;
   return (
-    <div style={{position: 'absolute', left: 0, right: 0, top: 292, display: 'flex', justifyContent: 'center', opacity: (1 - out) * Math.min(1, p), transform: `translateY(${(1 - p) * -40}px) scale(${0.9 + p * 0.1})`}}>
-      <div style={{display: 'flex', alignItems: 'center', gap: 18, padding: '12px 34px 12px 14px', borderRadius: 999, background: 'rgba(5,7,26,.6)', border: '2px solid rgba(255,255,255,.16)', fontFamily: FONT, fontWeight: 800, fontSize: 44, letterSpacing: 3, color: C.ink}}>
-        <LogoMark size={64} glow={false} /> DISPLAY <span style={{color: C.cyan}}>IQ</span>
+    <div style={{position: 'absolute', right: 40, top: 280, opacity: (1 - out) * Math.min(1, p), transform: `translateY(${(1 - p) * -40}px) scale(${0.9 + p * 0.1})`}}>
+      <div style={{display: 'flex', alignItems: 'center', gap: 14, padding: '10px 28px 10px 12px', borderRadius: 999, background: 'rgba(5,9,30,.7)', border: '2px solid rgba(255,255,255,.18)', fontFamily: FONT, fontWeight: 800, fontSize: 36, letterSpacing: 3, color: '#fff'}}>
+        <LogoMark size={54} glow={false} /> DISPLAY <span style={{color: C.cyan}}>IQ</span>
       </div>
     </div>
   );
@@ -38,15 +38,14 @@ export const StrikeText: React.FC<{frame: number; at: number; until: number}> = 
   const flash = prog(frame, at, 0.12, (t) => t) * (1 - prog(frame, at + 0.12, 0.35, SOFT));
   return (
     <AbsoluteFill style={{pointerEvents: 'none'}}>
-      <div style={{position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 46%,rgba(255,255,255,.85),rgba(120,200,255,.0) 60%)', opacity: flash}} />
-      <div style={{position: 'absolute', left: 0, right: 0, top: 560, textAlign: 'center', fontFamily: FONT, fontWeight: 900, fontSize: 170, letterSpacing: -6, color: '#fff', transform: `rotate(-5deg) scale(${0.3 + p * 0.7})`, opacity: (1 - out), textShadow: `0 0 30px ${C.magenta}, 0 0 80px ${C.magenta}, 0 0 140px ${C.cyan}`}}>
+      <div style={{position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 46%,rgba(255,255,255,.7),rgba(120,200,255,.0) 60%)', opacity: flash}} />
+      <div style={{position: 'absolute', left: 0, right: 0, top: 640, textAlign: 'center', fontFamily: 'Anton', fontSize: 230, letterSpacing: 2, color: '#fff', transform: `rotate(-5deg) scale(${0.3 + p * 0.7})`, opacity: 1 - out, textShadow: `0 0 30px ${C.magenta}, 0 0 80px ${C.magenta}, 0 0 140px ${C.cyan}`}}>
         STRIKE!
       </div>
     </AbsoluteFill>
   );
 };
 
-/** Dezente Vignette für Tiefe. */
 export const Vignette: React.FC = () => (
-  <AbsoluteFill style={{pointerEvents: 'none', background: 'radial-gradient(ellipse at 50% 50%,rgba(0,0,0,0) 55%,rgba(0,0,0,.45) 100%)'}} />
+  <AbsoluteFill style={{pointerEvents: 'none', background: 'radial-gradient(ellipse at 50% 50%,rgba(0,0,0,0) 60%,rgba(0,0,0,.4) 100%)'}} />
 );

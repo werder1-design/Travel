@@ -58,10 +58,10 @@ export const Hand: React.FC = () => (
   </svg>
 );
 
-export const TouchLayer: React.FC<{taps: TapPoint[]; sec: number}> = ({taps, sec}) => {
+export const TouchLayer: React.FC<{taps: TapPoint[]; sec: number; scale?: number}> = ({taps, sec, scale: base = 0.7}) => {
   const pose = handPose(taps, sec);
   if (!pose) return null;
-  const scale = 1 - pose.pr * 0.07;
+  const scale = base * (1 - pose.pr * 0.07);
   return (
     <div style={{position: 'absolute', left: 0, top: 0, width: 0, height: 0, pointerEvents: 'none', opacity: pose.opacity}}>
       <div style={{position: 'absolute', left: pose.x - 70 - 6, top: pose.y - 30 + 14, width: 300, height: 520, transform: `scale(${scale})`, transformOrigin: '70px 30px', opacity: 0.35, filter: 'blur(14px)'}}>

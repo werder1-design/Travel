@@ -6,7 +6,8 @@ export type CapChunk = {words: CapWord[]; start: number; end: number};
 
 /** Untertitel-Phrasen (max. 2 Zeilen). Wörter werden der Reihe nach den Voice-over-Timings zugeordnet. */
 const CHUNKS: string[] = [
-  'Display IQ – Jeder Tisch wird zur Umsatzquelle.',
+  'Display IQ – Jeder Tisch',
+  'wird zur Umsatzquelle.',
   'Dein Servicepersonal kann',
   'nicht überall gleichzeitig sein.',
   'Dein digitales Tischdisplay schon.',
@@ -30,7 +31,8 @@ const CHUNKS: string[] = [
   'eine zusätzliche Werbefläche',
   'und aus Werbung eine neue Einnahmequelle.',
   'Noch eine Runde Getränke?',
-  'Einfach auswählen, bestellen und weiterspielen.',
+  'Einfach auswählen, bestellen',
+  'und weiterspielen.',
   'Weniger Aufwand für dein Personal.',
   'Mehr Bestellungen.',
   'Zusätzliche Werbeeinnahmen.',
@@ -44,7 +46,7 @@ const KEYWORDS: Record<string, KeyTone> = {
   servicepersonal: 'cyan', tischdisplay: 'cyan', speisekarte: 'cyan', fingertipp: 'cyan',
   wartezeit: 'cyan', angebote: 'cyan', 'happy-hour-specials': 'cyan', events: 'cyan',
   bestellungen: 'cyan', getränke: 'cyan', snacks: 'cyan', weiterspielen: 'cyan',
-  iq: 'cyan', lokale: 'cyan', aufwand: 'cyan',
+  lokale: 'cyan', aufwand: 'cyan',
 };
 
 const norm = (s: string) => s.toLowerCase().replace(/[.,?!–:]/g, '');

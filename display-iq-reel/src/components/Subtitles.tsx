@@ -1,50 +1,54 @@
 import React from 'react';
 import {useCurrentFrame} from 'remotion';
 import {CAPTIONS} from '../data/captions';
-import {C, FONT, FPS, HEIGHT, SUBTITLE_BOTTOM} from '../theme';
+import {FONT, FPS, HEIGHT, SUBTITLE_BOTTOM} from '../theme';
 import {OUT, clamp01} from '../ease';
 
-const TONE = {cyan: C.cyan, amber: C.amber};
+const TONE = {cyan: '#8fe6ff', amber: '#ffc247'};
 
+/** Untertitel: weiße Sans-Schrift, Schlüsselwörter in goldener Serifen-Kursiv (Stil des Referenzvideos). */
 export const Subtitles: React.FC = () => {
   const frame = useCurrentFrame();
   const t = frame / FPS;
   const chunk = CAPTIONS.find((c) => t >= c.start && t <= c.end);
-  if (!chunk) return null;
-  const inP = OUT(clamp01((t - chunk.start) / 0.16));
+  return (
+    <>
+      <div style={{position: 'absolute', left: 0, right: 0, top: 1230, height: 500, background: 'linear-gradient(180deg,rgba(4,8,28,0) 0%,rgba(4,8,28,.8) 38%,rgba(4,8,28,.9) 100%)', pointerEvents: 'none'}} />
+      {chunk && <Chunk chunk={chunk} t={t} />}
+    </>
+  );
+};
+
+const Chunk: React.FC<{chunk: (typeof CAPTIONS)[number]; t: number}> = ({chunk, t}) => {
+  const inP = OUT(clamp01((t - chunk.start) / 0.18));
   const outP = clamp01((chunk.end - t) / 0.1);
   const opacity = Math.min(inP, outP);
   return (
-    <div style={{position: 'absolute', left: 0, right: 0, bottom: HEIGHT - SUBTITLE_BOTTOM, display: 'flex', justifyContent: 'center', pointerEvents: 'none'}}>
-      <div
-        style={{
-          maxWidth: 960, padding: '18px 34px 22px', borderRadius: 40, textAlign: 'center',
-          background: 'rgba(5,7,26,.62)', border: '1.5px solid rgba(255,255,255,.1)',
-          fontFamily: FONT, fontWeight: 800, fontSize: 60, lineHeight: 1.16, letterSpacing: -0.5,
-          opacity, transform: `translateY(${(1 - inP) * 22}px) scale(${0.94 + inP * 0.06})`,
-          boxShadow: '0 20px 60px rgba(0,0,0,.35)',
-        }}
-      >
-        {chunk.words.map((w, i) => {
-          const active = t >= w.start && t < w.end + 0.04;
-          const spoken = t >= w.start;
-          const base = w.tone ? TONE[w.tone] : '#fff';
-          const k = clamp01((t - w.start) / 0.12);
-          return (
-            <span
-              key={i}
-              style={{
-                display: 'inline-block', marginRight: i === chunk.words.length - 1 ? 0 : 17,
-                color: base, opacity: spoken ? 1 : 0.5,
-                transform: `scale(${active ? 1 + 0.05 * Math.sin(k * Math.PI * 0.5 + 0.0001) : 1})`,
-                textShadow: active && w.tone ? `0 0 28px ${base}` : '0 3px 10px rgba(0,0,0,.4)',
-              }}
-            >
-              {w.text}
-            </span>
-          );
-        })}
-      </div>
+    <div style={{position: 'absolute', left: 56, bottom: HEIGHT - SUBTITLE_BOTTOM, maxWidth: 880, fontFamily: FONT, opacity, transform: `translateY(${(1 - inP) * 24}px)`, pointerEvents: 'none'}}>
+      {chunk.words.map((w, i) => {
+        const spoken = t >= w.start;
+        const active = t >= w.start && t < w.end + 0.04;
+        const key = !!w.tone;
+        return (
+          <span
+            key={i}
+            style={{
+              display: 'inline-block', marginRight: key ? 14 : 14, lineHeight: 1.12,
+              fontFamily: key ? '"Playfair Display", serif' : FONT,
+              fontStyle: key ? 'italic' : 'normal',
+              fontWeight: key ? 700 : 800,
+              fontSize: key ? 70 : 62,
+              letterSpacing: key ? 0 : -1,
+              color: key ? TONE[w.tone!] : '#fff',
+              opacity: spoken ? 1 : 0.42,
+              transform: `scale(${active ? 1.04 : 1})`,
+              textShadow: '0 4px 18px rgba(0,0,0,.65), 0 1px 3px rgba(0,0,0,.6)',
+            }}
+          >
+            {w.text}
+          </span>
+        );
+      })}
     </div>
   );
 };

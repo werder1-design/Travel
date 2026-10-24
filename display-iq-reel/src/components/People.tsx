@@ -16,11 +16,13 @@ type SeatedProps = {
   phase?: number;
   beard?: boolean;
   glasses?: boolean;
+  /** true: liefert nur <g> (für Einbettung in eine bestehende SVG-Szene). */
+  bare?: boolean;
 };
 
 /** Stilisierte, minimalistische Büste (sitzend, frontal). 300×440 Design-Einheiten. */
 export const SeatedPerson: React.FC<SeatedProps> = ({
-  skin, hair, hairStyle, shirt, pose = 'idle', frame, phase = 0, beard, glasses,
+  skin, hair, hairStyle, shirt, pose = 'idle', frame, phase = 0, beard, glasses, bare,
 }) => {
   const t = frame / FPS;
   const bob = Math.sin(t * Math.PI * 1.3 + phase) * 3;
@@ -47,8 +49,8 @@ export const SeatedPerson: React.FC<SeatedProps> = ({
     );
   };
 
-  return (
-    <svg viewBox="0 0 300 440" width="100%" height="100%" style={{overflow: 'visible'}}>
+  const content = (
+    <>
       {(pose === 'cheer') && <g transform={`translate(0 ${cheerLift})`}>{arm(1, 90)}{arm(-1, 90)}</g>}
       {pose === 'wave' && <g>{arm(1, 70)}</g>}
       <g transform={`translate(150 440) scale(1 ${breathe}) translate(-150 -440)`}>
@@ -98,12 +100,13 @@ export const SeatedPerson: React.FC<SeatedProps> = ({
           </g>
         )}
       </g>
-    </svg>
+    </>
   );
+  return bare ? <g>{content}</g> : <svg viewBox="0 0 300 440" width="100%" height="100%" style={{overflow: 'visible'}}>{content}</svg>;
 };
 
 /** Kellner im Laufschritt (Seitenansicht nach rechts), 320×520 Design-Einheiten. */
-export const Waiter: React.FC<{frame: number; hurry?: number}> = ({frame, hurry = 1}) => {
+export const Waiter: React.FC<{frame: number; hurry?: number; bare?: boolean}> = ({frame, hurry = 1, bare}) => {
   const t = frame / FPS;
   const th = t * 11 * hurry;
   const bounce = Math.abs(Math.sin(th)) * -12;
@@ -122,8 +125,8 @@ export const Waiter: React.FC<{frame: number; hurry?: number}> = ({frame, hurry 
   };
   const swing = Math.sin(th) * 34;
   const trayTilt = Math.sin(th * 0.5) * 3;
-  return (
-    <svg viewBox="0 0 320 520" width="100%" height="100%" style={{overflow: 'visible'}}>
+  const content = (
+    <>
       {[0, 1, 2].map((i) => (
         <path key={i} d={`M${-60 - i * 12} ${180 + i * 52}H${40 - i * 8}`} stroke="rgba(255,255,255,.22)" strokeWidth="6" strokeLinecap="round" />
       ))}
@@ -162,8 +165,9 @@ export const Waiter: React.FC<{frame: number; hurry?: number}> = ({frame, hurry 
         </g>
         {leg(0, '#1d2247')}
       </g>
-    </svg>
+    </>
   );
+  return bare ? <g>{content}</g> : <svg viewBox="0 0 320 520" width="100%" height="100%" style={{overflow: 'visible'}}>{content}</svg>;
 };
 
 /** Sprechblase mit beliebigem Inhalt. */
