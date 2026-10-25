@@ -80,3 +80,33 @@ export const DevicePopup: React.FC<{
     </div>
   );
 };
+
+/** Frei schwebende 2D-Karte (Smartphone, Dashboard, Grafik), die aus einem Ursprungspunkt aufspringt. */
+export const FloatCard: React.FC<{
+  frame: number;
+  inAt: number;
+  outAt: number;
+  origin: {x: number; y: number};
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  scale?: number;
+  children: React.ReactNode;
+}> = ({frame, inAt, outAt, origin, left, top, width, height, scale = 1, children}) => {
+  const t = frame / FPS;
+  if (t < inAt || t > outAt + 0.5) return null;
+  const pIn = prog(frame, inAt, 0.6, OUT);
+  const pOut = prog(frame, outAt, 0.4, IN_OUT);
+  const k = pIn * (1 - pOut);
+  const w = width * scale;
+  const h = height * scale;
+  const cx = left + w / 2;
+  const cy = top + h / 2;
+  const s = 0.05 + 0.95 * k;
+  return (
+    <div style={{position: 'absolute', left, top, width: w, height: h, transform: `translate(${(origin.x - cx) * (1 - k)}px, ${(origin.y - cy) * (1 - k)}px) scale(${s})`, opacity: clamp01(k * 4)}}>
+      <div style={{width, height, transformOrigin: '0 0', transform: `scale(${scale})`}}>{children}</div>
+    </div>
+  );
+};

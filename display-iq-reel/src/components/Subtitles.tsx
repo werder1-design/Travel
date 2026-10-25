@@ -7,10 +7,10 @@ import {OUT, clamp01} from '../ease';
 const TONE = {cyan: '#8fe6ff', amber: '#ffc247'};
 
 /** Untertitel: weiße Sans-Schrift, Schlüsselwörter in goldener Serifen-Kursiv (Stil des Referenzvideos). */
-export const Subtitles: React.FC = () => {
+export const Subtitles: React.FC<{captions?: typeof CAPTIONS}> = ({captions = CAPTIONS}) => {
   const frame = useCurrentFrame();
   const t = frame / FPS;
-  const chunk = CAPTIONS.find((c) => t >= c.start && t <= c.end);
+  const chunk = captions.find((c) => t >= c.start && t <= c.end);
   return (
     <>
       <div style={{position: 'absolute', left: 0, right: 0, top: 1230, height: 500, background: 'linear-gradient(180deg,rgba(4,8,28,0) 0%,rgba(4,8,28,.8) 38%,rgba(4,8,28,.9) 100%)', pointerEvents: 'none'}} />

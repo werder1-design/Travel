@@ -14,10 +14,11 @@ oben rechts, Display als Popup. Das Gerät ist dem Produktfoto nachempfunden (8"
 cd display-iq-reel
 npm install
 npm run studio                              # Remotion Studio (Live-Vorschau, Scrubbing)
-npm run render                              # rendert + Audio-Feinschliff → export/display-iq-reel.mp4
+npm run render                              # Reel 1: rendert + Audio-Feinschliff → export/display-iq-reel.mp4
+npm run render:plastic                      # Reel 2 („Schluss mit Plastikaufstellern“) → export/plastic-reel.mp4
 node scripts/stills.mjs 8.6 19 31.6         # Einzelbilder (Sekunden) → out/stills/*.png
 node scripts/stills.mjs 0 --id=IsoPreview --name=iso '--props={"t":5,"cam":{"gx":10,"gy":11,"gz":1,"zoom":1.3}}'
-node scripts/generate-audio.mjs             # Musik + SFX neu synthetisieren
+node scripts/generate-audio.mjs             # Musik (Reel 1 + 2) + SFX neu synthetisieren (Argument: reel1 | reel2)
 ELEVENLABS_API_KEY=… node scripts/generate-voiceover.mjs   # Voice-over neu erzeugen (ungetestet)
 ```
 
@@ -50,3 +51,26 @@ ELEVENLABS_API_KEY=… node scripts/generate-voiceover.mjs   # Voice-over neu er
 - Musik und SFX sind per Code synthetisiert (`scripts/generate-audio.mjs`) – keine Fremdsamples/Lizenzen.
 - Schrift der Oberflächen: **Inter** (systemweit installiert; sonst `@remotion/google-fonts/Inter` einbinden).
 - Instagram-Safe-Zone: Headlines/Zähler ab y ≈ 270, Untertitel enden bei y 1470 (≈ 450 px Abstand unten) und bleiben links (x < 940), damit die Reel-Buttons rechts nichts verdecken.
+
+---
+
+# Reel 2 – „Schluss mit Plastikaufstellern“ (`PlasticReel`)
+
+9:16, 1080×1920, 30 FPS, **60,5 s** (Sprechzeit 58,0 s, unbeschleunigt; Stimme Henri, ElevenLabs `eleven_v4`, „IQ“ per IPA-Hilfe englisch).
+Isometrisches Restaurant-Diorama (Tische mit transparenten Acryl-L-Aufstellern → schwarze Display-IQ-Geräte, Welle durchs Restaurant),
+Stadt mit 20 Restaurants + Dashboard, Theater nebenan als Werbepartner, Finale mit großem Gerät im Vordergrund.
+
+| Pfad | Inhalt |
+| --- | --- |
+| `src/reel2/Reel2.tsx` | Haupt-Composition: Kamera-Keyframes, Popups, Headlines, Audio |
+| `src/reel2/RestaurantWorld.tsx` | Restaurant, Stadtblöcke, Gäste/Personal, Druck- und Tauschablauf, Transformationswelle, Hub-/Werbe-Datenlinien (`TL` = Zeitplan) |
+| `src/reel2/props2.tsx` | Acryl-Aufsteller, Display-Gerät, Verwandlung, Drucker, Papierstapel, Theater, Mini-Restaurants, Datenlinien |
+| `src/reel2/Screens2.tsx`, `Extras2.tsx` | Display-Inhalte (Happy Hour 20→30 %, Pasta, Live-Musik, Theater), Ladeanzeige am Smartphone, Dashboard, Einnahmegrafik |
+| `src/reel2/words.ts`, `data2.ts` | Wortzeiten (ElevenLabs Scribe), Untertitel, SFX-Cues |
+
+## Hinweise zu Reel 2
+
+- **Technik:** wie Reel 1 mit der eigenen isometrischen **SVG-Engine** (React/Remotion), nicht mit React Three Fiber / Three.js – bewusst, damit der Stil mit dem freigegebenen Reel 1 identisch bleibt. Alle Bewegungen (Kamera, Personen, Geräte, Verwandlung) sind echt animiert.
+- **Laden:** Das Smartphone lädt **per Kabel** am Anschluss am Gerätefuß (kein kabelloses Laden dargestellt).
+- Zahlen im Dashboard (20 Standorte, 186 Displays) und in der Einnahmegrafik (+1.840 € pro Monat) sind **Platzhalter**.
+- Musik/SFX synthetisiert (`scripts/generate-audio.mjs reel2`, `public/audio/music2.mp3`).

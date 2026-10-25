@@ -62,13 +62,13 @@ export const ProductShot: React.FC<{frame: number}> = ({frame}) => {
 };
 
 /** Abschluss: Logo, Claim und URL. */
-export const EndCard: React.FC<{frame: number; from: number}> = ({frame, from}) => {
+export const EndCard: React.FC<{frame: number; from: number; t1?: number; t2?: number; t3?: number; line1?: string; line2?: string; size1?: number}> = ({frame, from, t1 = 58.05, t2 = 59.3, t3 = 60.0, line1 = 'MEHR UMSATZ.', line2 = 'An jedem Tisch.', size1 = 150}) => {
   const t = frame / FPS;
   const logo = pop(frame, from + 0.15, 12, 150);
   const word = prog(frame, from + 0.3, 0.7, OUT);
-  const l1 = pop(frame, 58.05);
-  const l2 = pop(frame, 59.3);
-  const url = pop(frame, 60.0);
+  const l1 = pop(frame, t1);
+  const l2 = pop(frame, t2);
+  const url = pop(frame, t3);
   const pulse = (Math.sin(t * 3) + 1) / 2;
   return (
     <AbsoluteFill style={{background: 'radial-gradient(ellipse at 50% 34%,#1a2a80 0%,#0a0f33 52%,#05071a 100%)', fontFamily: FONT}}>
@@ -86,8 +86,8 @@ export const EndCard: React.FC<{frame: number; from: number}> = ({frame, from}) 
         <Wordmark size={112} />
       </div>
       <div style={{position: 'absolute', left: 0, right: 0, top: 830, textAlign: 'center'}}>
-        <div style={{fontFamily: 'Anton', fontSize: 150, lineHeight: 1.0, letterSpacing: 2, color: '#fff', opacity: l1, transform: `translateY(${(1 - l1) * 50}px) scale(${0.9 + l1 * 0.1})`, textShadow: '0 8px 40px rgba(0,0,0,.5)'}}>MEHR UMSATZ.</div>
-        <div style={{fontFamily: '"Playfair Display", serif', fontStyle: 'italic', fontWeight: 700, fontSize: 124, lineHeight: 1.1, color: '#ffc247', opacity: l2, transform: `translateY(${(1 - l2) * 50}px) scale(${0.9 + l2 * 0.1})`}}>An jedem Tisch.</div>
+        <div style={{fontFamily: 'Anton', fontSize: size1, lineHeight: 1.0, letterSpacing: 2, color: '#fff', opacity: l1, transform: `translateY(${(1 - l1) * 50}px) scale(${0.9 + l1 * 0.1})`, textShadow: '0 8px 40px rgba(0,0,0,.5)'}}>{line1}</div>
+        <div style={{fontFamily: '"Playfair Display", serif', fontStyle: 'italic', fontWeight: 700, fontSize: 124, lineHeight: 1.1, color: '#ffc247', opacity: l2, transform: `translateY(${(1 - l2) * 50}px) scale(${0.9 + l2 * 0.1})`}}>{line2}</div>
       </div>
       <div style={{position: 'absolute', left: 0, right: 0, top: 1160, display: 'flex', justifyContent: 'center', opacity: url, transform: `scale(${0.85 + url * 0.15})`}}>
         <div style={{padding: '16px 52px', borderRadius: 999, border: `3px solid ${C.cyan}`, color: C.cyan, fontSize: 56, fontWeight: 800, letterSpacing: 1, boxShadow: `0 0 ${24 + pulse * 30}px rgba(45,212,255,.4)`, background: 'rgba(45,212,255,.08)'}}>display-iq.de</div>

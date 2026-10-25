@@ -1,4 +1,4 @@
-import {VOICEOVER_WORDS} from './voiceover-words';
+import {VOICEOVER_WORDS, RawWord} from './voiceover-words';
 
 export type KeyTone = 'cyan' | 'amber';
 export type CapWord = {text: string; start: number; end: number; tone?: KeyTone};
@@ -51,20 +51,16 @@ const KEYWORDS: Record<string, KeyTone> = {
 
 const norm = (s: string) => s.toLowerCase().replace(/[.,?!–:]/g, '');
 
-// Mehrfach-Tokens "–" an das vorherige Wort hängen.
-const merged: {text: string; start: number; end: number}[] = [];
-for (const [text, start, end] of VOICEOVER_WORDS) {
-  if (text === '–' && merged.length) {
-    merged[merged.length - 1].text += ' –';
-  } else {
-    merged.push({text, start, end});
+/** Ordnet Untertitel-Phrasen der Reihe nach den Voice-over-Wortzeiten zu (bricht bei Abweichung ab). */
+export const buildCaptions = (raw: readonly RawWord[], chunkTexts: string[], keywords: Record<string, KeyTone>): CapChunk[] => {
+  const merged: {text: string; start: number; end: number}[] = [];
+  for (const [text, start, end] of raw) {
+    if (text === '–' && merged.length) merged[merged.length - 1].text += ' –';
+    else merged.push({text, start, end});
   }
-}
-
-export const CAPTIONS: CapChunk[] = (() => {
   let wi = 0;
   const chunks: CapChunk[] = [];
-  for (const chunk of CHUNKS) {
+  for (const chunk of chunkTexts) {
     const tokens = chunk.split(' ').filter((t) => t !== '–');
     const words: CapWord[] = [];
     for (const tok of tokens) {
@@ -73,16 +69,17 @@ export const CAPTIONS: CapChunk[] = (() => {
         throw new Error(`Untertitel/Voice-over passen nicht zusammen bei "${tok}" (Wort ${wi}: "${w?.text}")`);
       }
       const dash = chunk.includes(`${tok} –`) ? ' –' : '';
-      words.push({text: tok + dash, start: w.start, end: w.end, tone: KEYWORDS[norm(tok)]});
+      words.push({text: tok + dash, start: w.start, end: w.end, tone: keywords[norm(tok)]});
     }
     chunks.push({words, start: words[0].start, end: words[words.length - 1].end});
   }
   if (wi !== merged.length) throw new Error(`Nicht alle Voice-over-Wörter in Untertiteln verwendet (${wi}/${merged.length})`);
-  // Hold-Zeiten: kurz vor dem ersten Wort ein-, kurz nach dem letzten ausblenden, ohne Überlappung.
   chunks.forEach((c, i) => {
     const next = chunks[i + 1];
     c.start = Math.max(0, c.start - 0.05);
     c.end = Math.min(c.end + 0.22, next ? next.words[0].start - 0.03 : c.end + 0.5);
   });
   return chunks;
-})();
+};
+
+export const CAPTIONS: CapChunk[] = buildCaptions(VOICEOVER_WORDS, CHUNKS, KEYWORDS);

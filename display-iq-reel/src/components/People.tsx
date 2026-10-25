@@ -106,7 +106,7 @@ export const SeatedPerson: React.FC<SeatedProps> = ({
 };
 
 /** Kellner im Laufschritt (Seitenansicht nach rechts), 320×520 Design-Einheiten. */
-export const Waiter: React.FC<{frame: number; hurry?: number; bare?: boolean}> = ({frame, hurry = 1, bare}) => {
+export const Waiter: React.FC<{frame: number; hurry?: number; bare?: boolean; carry?: 'tray' | 'paper' | 'none'}> = ({frame, hurry = 1, bare, carry = 'tray'}) => {
   const t = frame / FPS;
   const th = t * 11 * hurry;
   const bounce = Math.abs(Math.sin(th)) * -12;
@@ -153,6 +153,7 @@ export const Waiter: React.FC<{frame: number; hurry?: number; bare?: boolean}> =
         {/* Vorderer Arm mit Tablett */}
         <path d="M170 204L222 252L240 150" fill="none" stroke="#F1F3FF" strokeWidth="30" strokeLinecap="round" strokeLinejoin="round" />
         <circle cx="240" cy="144" r="15" fill="#E8B58F" />
+        {carry === 'tray' && (
         <g transform={`rotate(${trayTilt} 240 132)`}>
           <ellipse cx="240" cy="130" rx="78" ry="12" fill="#C9D0F2" />
           <ellipse cx="240" cy="126" rx="78" ry="10" fill="#E5E9FF" />
@@ -163,6 +164,14 @@ export const Waiter: React.FC<{frame: number; hurry?: number; bare?: boolean}> =
             </g>
           ))}
         </g>
+        )}
+        {carry === 'paper' && (
+          <g transform={`rotate(${trayTilt} 240 132)`}>
+            {Array.from({length: 9}).map((_, i) => (
+              <rect key={i} x={196 + (i % 3) * 2} y={116 - i * 7} width="86" height="8" rx="2" fill={i % 4 === 0 ? '#f4efe0' : '#ffffff'} stroke="#c9ccdc" strokeWidth="1.5" />
+            ))}
+          </g>
+        )}
         {leg(0, '#1d2247')}
       </g>
     </>

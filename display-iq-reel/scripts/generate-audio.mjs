@@ -140,7 +140,8 @@ sfx.shimmer = (() => {
 for (const [name, b] of Object.entries(sfx)) writeWav(join(root, 'sfx', `${name}.wav`), b);
 
 // ---- Musik ----
-const DUR = 62.5;
+function makeMusic(cfg) {
+const {name, DUR, kickOn, hatOn, clapOn, bassOn, arpOn, padLevel, risers, padOpen, fadeOut} = cfg;
 const BPM = 120;
 const BEAT = 60 / BPM;
 const m = buf(DUR);
@@ -152,13 +153,6 @@ const chords = [
 ];
 const chordAt = (t) => chords[Math.floor(t / (BEAT * 4)) % 4];
 const inRange = (t, a, b) => t >= a && t < b;
-const kickOn = (t) => (inRange(t, 0, 33) || inRange(t, 35.0, 56.5)) ? (t < 2 ? 0.55 : 0.85) : 0;
-const hatOn = (t) => (inRange(t, 0, 33.0) || inRange(t, 34.4, 56.5) ? 0.5 : 0);
-const clapOn = (t) => (inRange(t, 10.2, 33) || inRange(t, 35, 56.5) ? 0.5 : 0);
-const bassOn = (t) => (inRange(t, 6, 33) || inRange(t, 35, 56.5) ? 0.8 : 0);
-const arpOn = (t) => (inRange(t, 12, 33) ? 0.28 : inRange(t, 34.4, 56.5) ? 0.42 : 0);
-const padLevel = (t) => (t < 56.5 ? 0.55 + 0.25 * Math.min(1, Math.max(0, (t - 44) / 6)) : 0.6 * Math.max(0, 1 - (t - 56.5) / 6));
-
 // Kicks (merken für Sidechain)
 const kicks = [];
 for (let b = 0; b * BEAT < DUR; b++) {
@@ -225,7 +219,7 @@ for (let b = 0; b * BEAT * 0.5 < DUR; b++) {
   const fl = svf(), fr = svf();
   for (let i = 0; i < pad[0].length; i++) {
     const t = i / SR;
-    const cut = 700 + 500 * Math.sin(t * 0.8) + (t > 44 && t < 56.5 ? (t - 44) * 80 : 0);
+    const cut = 700 + 500 * Math.sin(t * 0.8) + (t > padOpen[0] && t < padOpen[1] ? (t - padOpen[0]) * 80 : 0);
     const d = duck(t);
     m[0][i] += fl(pad[0][i], cut, 0.9).lp * d * 1.4;
     m[1][i] += fr(pad[1][i], cut, 0.9).lp * d * 1.4;
@@ -260,17 +254,54 @@ const riser = (t0, dur) => {
   const f = svf();
   add(m, t0, (x) => f(noise(), 500 + 7000 * (x / dur) ** 2, 0.5).hp * (x / dur) ** 2 * 0.22, dur, 0);
 };
-riser(31.2, 1.8);
-riser(54.7, 1.8);
+for (const [t0, d] of risers) riser(t0, d);
 // Fade-out + Soft-Clip
 for (let i = 0; i < m[0].length; i++) {
   const t = i / SR;
-  const fade = t > DUR - 2.5 ? Math.max(0, (DUR - t) / 2.5) : 1;
+  const fade = t > DUR - fadeOut ? Math.max(0, (DUR - t) / fadeOut) : 1;
   m[0][i] = Math.tanh(m[0][i] * 0.9) * fade;
   m[1][i] = Math.tanh(m[1][i] * 0.9) * fade;
 }
-const wavPath = join(root, 'music.wav');
+const wavPath = join(root, `${name}.wav`);
 writeWav(wavPath, m);
-execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', wavPath, '-b:a', '192k', join(root, 'music.mp3')]);
+execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', wavPath, '-b:a', '192k', join(root, `${name}.mp3`)]);
 execFileSync('rm', ['-f', wavPath]);
+}
+
+
+const inRange = (t, a, b) => t >= a && t < b;
+const only = process.argv[2];
+
+if (!only || only === 'reel1') {
+  makeMusic({
+    name: 'music',
+    DUR: 62.5,
+    kickOn: (t) => (inRange(t, 0, 33) || inRange(t, 35.0, 56.5)) ? (t < 2 ? 0.55 : 0.85) : 0,
+    hatOn: (t) => (inRange(t, 0, 33.0) || inRange(t, 34.4, 56.5) ? 0.5 : 0),
+    clapOn: (t) => (inRange(t, 10.2, 33) || inRange(t, 35, 56.5) ? 0.5 : 0),
+    bassOn: (t) => (inRange(t, 6, 33) || inRange(t, 35, 56.5) ? 0.8 : 0),
+    arpOn: (t) => (inRange(t, 12, 33) ? 0.28 : inRange(t, 34.4, 56.5) ? 0.42 : 0),
+    padLevel: (t) => (t < 56.5 ? 0.55 + 0.25 * Math.min(1, Math.max(0, (t - 44) / 6)) : 0.6 * Math.max(0, 1 - (t - 56.5) / 6)),
+    risers: [[31.2, 1.8], [54.7, 1.8]],
+    padOpen: [44, 56.5],
+    fadeOut: 2.5,
+  });
+}
+
+// Reel 2 "Schluss mit Plastikaufstellern": Break vor dem Theater-Teil (ca. 37.4-38.6), Drop zum Finale bei 46.7, Schlag bei 54.8
+if (!only || only === 'reel2') {
+  makeMusic({
+    name: 'music2',
+    DUR: 60.5,
+    kickOn: (t) => (inRange(t, 0, 37.2) || inRange(t, 38.6, 57.5)) ? (t < 2.5 ? 0.5 : 0.85) : 0,
+    hatOn: (t) => (inRange(t, 4, 37.2) || inRange(t, 38.0, 57.5) ? 0.5 : 0),
+    clapOn: (t) => (inRange(t, 11.2, 37.2) || inRange(t, 38.6, 54.8) ? 0.5 : 0),
+    bassOn: (t) => (inRange(t, 7, 37.2) || inRange(t, 38.6, 57.5) ? 0.8 : 0),
+    arpOn: (t) => (inRange(t, 13, 37.2) ? 0.28 : inRange(t, 38.0, 57.5) ? 0.4 : 0),
+    padLevel: (t) => (t < 57.5 ? 0.55 + 0.25 * Math.min(1, Math.max(0, (t - 46) / 6)) : 0.6 * Math.max(0, 1 - (t - 57.5) / 3)),
+    risers: [[35.6, 1.7], [45.0, 1.7], [53.0, 1.8]],
+    padOpen: [46, 57.5],
+    fadeOut: 2.5,
+  });
+}
 console.log('Audio erzeugt:', root);
