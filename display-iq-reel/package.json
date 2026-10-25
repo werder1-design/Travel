@@ -8,6 +8,7 @@
     "audio": "node scripts/generate-audio.mjs",
     "render": "remotion render src/index.ts DisplayIQ out/display-iq-reel.raw.mp4 --codec=h264 --crf=17 --pixel-format=yuv420p --image-format=png --concurrency=4 --audio-codec=aac --audio-bitrate=256k && bash scripts/finalize.sh",
     "render:plastic": "remotion render src/index.ts PlasticReel out/plastic-reel.raw.mp4 --codec=h264 --crf=17 --pixel-format=yuv420p --image-format=png --concurrency=4 --audio-codec=aac --audio-bitrate=256k && bash scripts/finalize.sh plastic-reel",
+    "render:day": "remotion render src/index.ts DayReel out/day-reel.raw.mp4 --codec=h264 --crf=17 --pixel-format=yuv420p --image-format=png --concurrency=4 --audio-codec=aac --audio-bitrate=256k && bash scripts/finalize.sh day-reel",
     "still": "remotion still src/index.ts DisplayIQ"
   },
   "dependencies": {

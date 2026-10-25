@@ -16,6 +16,7 @@ npm install
 npm run studio                              # Remotion Studio (Live-Vorschau, Scrubbing)
 npm run render                              # Reel 1: rendert + Audio-Feinschliff → export/display-iq-reel.mp4
 npm run render:plastic                      # Reel 2 („Schluss mit Plastikaufstellern“) → export/plastic-reel.mp4
+npm run render:day                          # Reel 3 („Ein Tag. Vier Angebote.“) → export/day-reel.mp4
 node scripts/stills.mjs 8.6 19 31.6         # Einzelbilder (Sekunden) → out/stills/*.png
 node scripts/stills.mjs 0 --id=IsoPreview --name=iso '--props={"t":5,"cam":{"gx":10,"gy":11,"gz":1,"zoom":1.3}}'
 node scripts/generate-audio.mjs             # Musik (Reel 1 + 2) + SFX neu synthetisieren (Argument: reel1 | reel2)
@@ -74,3 +75,28 @@ Stadt mit 20 Restaurants + Dashboard, Theater nebenan als Werbepartner, Finale m
 - **Laden:** Das Smartphone lädt **per Kabel** am Anschluss am Gerätefuß (kein kabelloses Laden dargestellt).
 - Zahlen im Dashboard (20 Standorte, 186 Displays) und in der Einnahmegrafik (+1.840 € pro Monat) sind **Platzhalter**.
 - Musik/SFX synthetisiert (`scripts/generate-audio.mjs reel2`, `public/audio/music2.mp3`).
+
+---
+
+# Reel 3 – „Ein Tag. Vier Angebote.“ (`DayReel`)
+
+9:16, 1080×1920, 30 FPS, deutsches Voice-over (Henri, ElevenLabs, „IQ“ englisch). Ein einziges isometrisches Restaurant durchläuft im Zeitraffer einen ganzen Tag:
+Uhr oben rechts, Tageslicht/Sonnenschächte/goldene Stunde/Neon-Abend, Gäste und Speisen wechseln, das Tischdisplay (und ein großes schwebendes Abbild) zeigt je Tageszeit Frühstück → Lunch → Kaffee & Kuchen → Happy Hour.
+Die Kamera bleibt auf dem Tisch mit dem Hero-Display; nur in der Zeitplan-Szene fährt sie auf die Stadt (Dashboard „Zeitplan aktivieren“, 20 Standorte synchron).
+
+| Pfad | Inhalt |
+| --- | --- |
+| `src/reel3/Reel3.tsx` | Haupt-Composition (Kamera, Popup, Uhr, Headlines, Endcard mit echtem Logo) |
+| `src/reel3/timeline.ts` | **Alle Zeitpunkte hängen an Wortzeiten** (`T3`), dazu Uhrzeit-Funktion `hourAt(t)`, Tageslicht/Neon/Sonne |
+| `src/reel3/DayWorld.tsx` | Restaurant im Tageslauf: Himmel, Fenster, Lichtschächte, Neon, Gäste/Speisen je Tageszeit, Kellner mit Pasta, hereinkommende Gäste, Stadt + Standort-Sync |
+| `src/reel3/props3.tsx`, `Screens3.tsx`, `Extras3.tsx` | Tischdeko, Display-Inhalte, Uhr, Tagesplan-Dashboard |
+| `src/reel3/words.ts`, `data3.ts` | Wortzeiten (ElevenLabs Scribe), Untertitel, SFX |
+| `public/brand/logo.jpg` | Display-IQ-Logo (vom Kunden geliefert) |
+
+**Neues Voice-over einspielen:** `public/audio/vo3.mp3` ersetzen → Scribe-Zeiten in `src/reel3/words.ts` eintragen (Format `[Text, Start, Ende]`, „/aɪ ˈkjuː/“ zu „IQ“ zusammenfassen) → `node scripts/generate-audio.mjs reel3` → `npm run render:day`.
+
+## Hinweise zu Reel 3
+
+- **Technik:** wieder die eigene isometrische SVG-Engine (React/Remotion) statt React Three Fiber/Three.js, damit der Look zu Reel 1/2 passt.
+- **Produktfunktion:** Die zeitgesteuerte Ausspielung („Zeitplan aktivieren“) ist wie im Briefing dargestellt – **vor Veröffentlichung prüfen, ob Display IQ diese Funktion tatsächlich anbietet**. Uhrzeiten, Preise (9,90 € / 12,90 € / 7,90 € / 2 für 1) und „20 Standorte“ sind illustrative Platzhalter.
+- Musik und SFX sind synthetisiert (`scripts/generate-audio.mjs reel3`).

@@ -54,7 +54,7 @@ export const modeAt = (i: number, t: number): keyof typeof MODE2 => {
   return (['theater', 'happy', 'music', 'pasta', 'theater', 'happy', 'music', 'pasta', 'theater'] as const)[(i + Math.floor((t - 46.6) / 1.9)) % 9];
 };
 
-const LOOKS: Look[] = [
+export const LOOKS: Look[] = [
   {skin: SKIN[0], hair: '#2B1E1A', hs: 'short', shirt: '#2DD4FF'},
   {skin: SKIN[2], hair: '#171717', hs: 'long', shirt: '#FF3D9A', glasses: true},
   {skin: SKIN[1], hair: '#5B3A24', hs: 'cap', shirt: '#FFB627', beard: true},
@@ -64,10 +64,10 @@ const LOOKS: Look[] = [
   {skin: SKIN[1], hair: '#222222', hs: 'short', shirt: '#E5445A'},
   {skin: SKIN[4], hair: '#5B3A24', hs: 'bun', shirt: '#2F7F86'},
 ];
-const SEATS: Record<number, ('w' | 'e' | 'n')[]> = {0: ['w', 'e'], 1: ['w'], 2: ['e'], 3: ['w', 'e'], 4: ['w', 'e'], 5: ['w', 'e'], 6: ['e'], 7: ['w', 'e'], 8: ['w']};
-const SEAT_OFF = {w: [-1.0, 0], e: [1.0, 0], n: [0, -1.0]} as const;
+export const SEATS: Record<number, ('w' | 'e' | 'n')[]> = {0: ['w', 'e'], 1: ['w'], 2: ['e'], 3: ['w', 'e'], 4: ['w', 'e'], 5: ['w', 'e'], 6: ['e'], 7: ['w', 'e'], 8: ['w']};
+export const SEAT_OFF = {w: [-1.0, 0], e: [1.0, 0], n: [0, -1.0]} as const;
 
-const pathOf = (a: readonly V3[]) => {
+export const pathOf = (a: readonly V3[]) => {
   const pp = a.map(([x, y, z]) => P(x, y, z));
   return `M${pp.map((p) => `${p.X.toFixed(1)} ${p.Y.toFixed(1)}`).join('L')}Z`;
 };
@@ -83,7 +83,7 @@ const windowsR = (y: number, x0: number, x1: number, z0: number, z1: number, col
   return d;
 };
 
-const Defs: React.FC = () => (
+export const Defs: React.FC = () => (
   <defs>
     <filter id="neonGlow" x="-20%" y="-50%" width="140%" height="200%">
       <feGaussianBlur stdDeviation="5" result="b" />
@@ -100,7 +100,7 @@ const Defs: React.FC = () => (
 );
 
 // Stadt-Raster: Blöcke mit Mini-Restaurants (insgesamt 20 Standorte inkl. Hero-Restaurant)
-const BLOCKS: {i: number; j: number; bx: number; by: number}[] = [];
+export const BLOCKS: {i: number; j: number; bx: number; by: number}[] = [];
 for (let i = -2; i <= 2; i++) for (let j = -2; j <= 1; j++) if (!(i === 0 && j === 0)) BLOCKS.push({i, j, bx: i * BLOCK.w, by: j * BLOCK.d});
 export const MINI_POS = BLOCKS.map((b) => ({x: b.bx + 8, y: b.by + 6.3, z: 3.4}));
 
@@ -257,7 +257,7 @@ const buildStatic = () => {
 };
 
 let STATIC: ReturnType<typeof buildStatic> | null = null;
-const getStatic = () => (STATIC ??= buildStatic());
+export const getStatic = () => (STATIC ??= buildStatic());
 
 // ---------- Mitarbeiter-Weg ----------
 const spot = (i: number) => [RT[i].x, RT[i].y - 1.5] as const;

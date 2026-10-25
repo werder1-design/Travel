@@ -4,7 +4,7 @@
  * Übergänge, Strike, Münzen) rein per Synthese – keine Fremdsamples, keine Lizenzfragen.
  * Ausgabe: public/audio/music.mp3 und public/audio/sfx/*.wav
  */
-import {mkdirSync, writeFileSync} from 'node:fs';
+import {mkdirSync, readFileSync, writeFileSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import {dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -302,6 +302,29 @@ if (!only || only === 'reel2') {
     risers: [[35.6, 1.7], [45.0, 1.7], [53.0, 1.8]],
     padOpen: [46, 57.5],
     fadeOut: 2.5,
+  });
+}
+
+// Reel 3 „Ein Tag. Vier Angebote.“: Takt folgt den Wortzeiten aus src/reel3/words.ts
+if (!only || only === 'reel3') {
+  const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'reel3', 'words.ts'), 'utf8');
+  const words = [...src.matchAll(/\['([^']*(?:\\'[^']*)*)', ([\d.]+), ([\d.]+)\]/g)].map((m) => ({w: m[1].replace(/\\'/g, "'").toLowerCase().replace(/[.,?!–:]/g, ''), s: +m[2], e: +m[3]}));
+  const at = (w, n = 0) => words.filter((x) => x.w === w)[n].s;
+  const warum = at('warum'), mit = at('mit'), neun = at('neun'), alles = at('alles'), danach = at('danach'), kein = at('kein'), disp2 = at('display', 1);
+  const end = words[words.length - 1].e;
+  const DUR3 = Math.ceil((end + 1.6) * 10) / 10 + 0.6;
+  makeMusic({
+    name: 'music3',
+    DUR: DUR3,
+    kickOn: (t) => (inRange(t, 0, warum - 0.15) || inRange(t, mit - 0.1, disp2 - 0.05) || inRange(t, disp2 + 0.2, end + 0.4)) ? (t < 1.5 ? 0.55 : 0.85) : 0,
+    hatOn: (t) => (inRange(t, 0.3, warum - 0.15) || inRange(t, mit + 0.5, disp2 - 0.05) ? 0.5 : 0),
+    clapOn: (t) => (inRange(t, neun - 0.2, alles - 0.4) || inRange(t, danach + 0.5, disp2 - 0.4) ? 0.5 : 0),
+    bassOn: (t) => (inRange(t, 1.0, warum - 0.15) || inRange(t, mit - 0.1, disp2 - 0.05) || inRange(t, disp2 + 0.2, end + 0.2) ? 0.8 : 0),
+    arpOn: (t) => (inRange(t, 1.5, warum - 0.15) ? 0.3 : inRange(t, neun - 0.5, disp2 - 0.05) ? 0.36 : inRange(t, disp2 + 0.2, end + 0.4) ? 0.42 : 0),
+    padLevel: (t) => (t < end + 0.4 ? 0.55 + 0.25 * Math.min(1, Math.max(0, (t - kein) / 5)) : 0.6 * Math.max(0, 1 - (t - end - 0.4) / 2)),
+    risers: [[mit - 1.4, 1.3], [danach - 1.2, 1.3], [disp2 - 1.9, 1.8]],
+    padOpen: [kein, end],
+    fadeOut: 2.2,
   });
 }
 console.log('Audio erzeugt:', root);
