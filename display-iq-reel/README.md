@@ -100,3 +100,5 @@ Die Kamera bleibt auf dem Tisch mit dem Hero-Display; nur in der Zeitplan-Szene 
 - **Technik:** wieder die eigene isometrische SVG-Engine (React/Remotion) statt React Three Fiber/Three.js, damit der Look zu Reel 1/2 passt.
 - **Produktfunktion:** Die zeitgesteuerte Ausspielung („Zeitplan aktivieren“) ist wie im Briefing dargestellt – **vor Veröffentlichung prüfen, ob Display IQ diese Funktion tatsächlich anbietet**. Uhrzeiten, Preise (9,90 € / 12,90 € / 7,90 € / 2 für 1) und „20 Standorte“ sind illustrative Platzhalter.
 - Musik und SFX sind synthetisiert (`scripts/generate-audio.mjs reel3`).
+
+- **Stand:** `public/audio/vo3.mp3` ist aktuell eine **stumme Platzhalter-Datei** (ElevenLabs-Rate-Limit), `music3.mp3` basiert auf geschätzten Wortzeiten. `export/day-reel-vorschau-ohne-sprecher.mp4` ist nur eine Bild-Vorschau. Nach dem Einspielen des echten Voice-overs (siehe oben) neu erzeugen.
