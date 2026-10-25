@@ -4,7 +4,7 @@ Animierter Produktfilm für **Display IQ**: 9:16, 1080×1920, 30 FPS, H.264, deu
 animierte Untertitel, Musikbett und Soundeffekte. Länge **62 s** (Sprechzeit 60,5 s – das Voice-over wurde
 nicht beschleunigt; die Szenenlängen folgen dem tatsächlichen Sprechtext).
 
-**Optik:** isometrisches Diorama der Bowlinghalle von oben (Nacht, Stadt, Straße, Nachbar-Werkstatt),
+**Optik:** isometrisches Diorama der Bowlinghalle von oben (warmes Licht, sechs Holzbahnen mit Anzeigetafeln, Tische mit Sitzbank direkt am Bahnende zum Sitzen & Spielen; Nacht, Stadt, Straße, Nachbar-Werkstatt),
 Headlines in *Anton* links oben, Untertitel mit goldenen *Playfair-Display*-Kursiv-Akzenten, Umsatz-Zähler
 oben rechts, Display als Popup. Das Gerät ist dem Produktfoto nachempfunden (8"-Hochkant-Display auf Schrägfuß).
 

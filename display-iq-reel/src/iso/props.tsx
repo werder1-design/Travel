@@ -206,3 +206,73 @@ export const plant = (k: React.Key, x: number, y: number, s = 1) => {
 
 export const pbox = poly;
 export {flat};
+
+// ---------- Bahn-Optik (Referenz: warmes Licht, Tische direkt an der Bahn) ----------
+export const BALL_COLORS = ['#e5445a', '#2f6bff', '#34c47c', '#ff9a3c', '#14b8c4', '#a855f7'];
+
+export const ballColored = (k: React.Key, sx: number, sy: number, r: number, ci: number) => (
+  <g key={k} transform={`translate(${sx} ${sy})`}>
+    <ellipse cx="0" cy={r * 0.85} rx={r * 1.0} ry={r * 0.35} fill="rgba(0,0,0,.3)" />
+    <circle r={r} fill={`url(#ballC${ci % 6})`} />
+    <ellipse cx={-r * 0.35} cy={-r * 0.4} rx={r * 0.28} ry={r * 0.15} fill="rgba(255,255,255,.55)" transform={`rotate(-35 ${-r * 0.35} ${-r * 0.4})`} />
+  </g>
+);
+
+/** Ball-Rückführung am Bahnende: dunkler Bogen + Schiene mit Kugeln. */
+export const ballReturn = (k: React.Key, cx: number, gy: number, ci: number) => {
+  const out: React.ReactNode[] = [];
+  out.push(shadowEllipse('sh', cx + 0.2, gy + 0.5, 70, 26, 0.3));
+  out.push(box('hood', cx - 0.85, gy, 0, 1.7, 0.75, 1.0, {top: '#34293a', left: '#1d1722', right: '#131017'}));
+  out.push(box('hoodT', cx - 0.7, gy + 0.05, 1.0, 1.4, 0.55, 0.22, {top: '#3e3244', left: '#251d2a', right: '#17121c'}));
+  out.push(box('slit', cx - 0.5, gy + 0.75, 0.25, 1.0, 0.02, 0.5, {top: '#000', left: '#ffb36a', right: '#000'}));
+  out.push(box('rail', cx + 0.9, gy + 0.2, 0.42, 1.3, 0.4, 0.1, {top: '#8f9ab5', left: '#6d7893', right: '#4d5670'}));
+  return <g key={k}>{out}</g>;
+};
+export const railBalls = (k: React.Key, cx: number, gy: number, z: number, seed: number) => {
+  const out: React.ReactNode[] = [];
+  [1.15, 1.55, 1.95].forEach((dx, i) => {
+    const p = P(cx + dx, gy + 0.4, z + 0.1);
+    out.push(ballColored(`rb${i}`, p.X, p.Y - 6, 10, seed + i));
+  });
+  return <g key={k}>{out}</g>;
+};
+
+export const bench = (k: React.Key, cx: number, gy: number) => (
+  <g key={k}>
+    {box('seat', cx - 1.15, gy, 0, 2.3, 0.78, 0.45, {top: '#c4583f', left: '#a8472f', right: '#7d3523'})}
+    {box('back', cx - 1.15, gy - 0.2, 0.45, 2.3, 0.2, 0.8, {top: '#3a3040', left: '#2b2330', right: '#1d1822'})}
+  </g>
+);
+
+export const rectTable = (k: React.Key, cx: number, cy: number) => {
+  const wood = {top: '#bd8957', left: '#9a6b41', right: '#7a5232'};
+  const leg = {top: '#2a2630', left: '#1d1a22', right: '#141117'};
+  const out: React.ReactNode[] = [];
+  out.push(shadowEllipse('sh', cx + 0.1, cy + 0.4, 118, 42, 0.32));
+  [[-1.0, -0.5], [0.95, -0.5], [-1.0, 0.45], [0.95, 0.45]].forEach(([dx, dy], i) => out.push(box(`l${i}`, cx + dx, cy + dy, 0, 0.07, 0.07, 0.72, leg)));
+  out.push(box('top', cx - 1.1, cy - 0.6, 0.72, 2.2, 1.2, 0.09, wood));
+  return <g key={k}>{out}</g>;
+};
+
+export const diningChair = (k: React.Key, x: number, y: number, side: 'w' | 'e') => {
+  const wood = {top: '#b78552', left: '#926238', right: '#704a2a'};
+  return (
+    <g key={k}>
+      {box('s', x - 0.28, y - 0.28, 0.0, 0.56, 0.56, 0.46, wood)}
+      {box('b', side === 'w' ? x - 0.36 : x + 0.28, y - 0.28, 0.46, 0.08, 0.56, 0.62, wood)}
+    </g>
+  );
+};
+
+export const tableLamp = (k: React.Key, x: number, y: number, z: number, t: number) => {
+  const p = P(x, y, z);
+  const flick = 0.85 + 0.15 * Math.sin(t * 3 + x);
+  return (
+    <g key={k}>
+      <ellipse cx={p.X} cy={p.Y + 4} rx="46" ry="18" fill={`rgba(255,196,120,${0.22 * flick})`} />
+      <rect x={p.X - 2} y={p.Y - 26} width="4" height="26" fill="#2a2630" />
+      <path d={`M${p.X - 12} ${p.Y - 24} L${p.X - 7} ${p.Y - 40} L${p.X + 7} ${p.Y - 40} L${p.X + 12} ${p.Y - 24}Z`} fill="#ffd9a0" />
+      <ellipse cx={p.X} cy={p.Y - 34} rx="26" ry="20" fill={`rgba(255,214,150,${0.28 * flick})`} />
+    </g>
+  );
+};

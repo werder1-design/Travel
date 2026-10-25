@@ -4,7 +4,7 @@ import {IN_OUT, OUT, clamp01, lerp, prog, rand} from '../ease';
 import {Waiter} from '../components/People';
 import {Mat, darken, lighten, mat} from './colors';
 import {P, V3, box, cyl, flat, floorM, poly, pts, ring, shadowEllipse, wallL, wallLM, wallR, wallRM} from './iso';
-import {Item, Look, W, ballSprite, carAlongX, carAlongY, chair, lamp, miniDisplay, person, pinSprite, plant, table, tableware, tree} from './props';
+import {Item, Look, ballColored, ballReturn, ballSprite, bench, carAlongX, carAlongY, diningChair, lamp, miniDisplay, person, pinSprite, plant, railBalls, rectTable, tableLamp, tableware, tree} from './props';
 import {SKIN} from '../components/People';
 
 export type IsoCam = {gx: number; gy: number; gz: number; zoom: number; cy?: number};
@@ -19,20 +19,21 @@ export const worldToScreen = (x: number, y: number, z: number, c: IsoCam) => {
 
 // ---------- Geometrie ----------
 const HALL = {W: 22, D: 15, H: 4.6};
-const LANE_C = [1.55, 3.3, 5.05, 6.8];
-const LANE_X0 = 0.9;
-const LANE_X1 = 17.4;
-export const PIN_X = 2.7;
+/** Bahn-Mittelachsen (gx). Bahnen laufen entlang gy: Pins an der rechten Rückwand (gy ≈ 1–3), Anwurf bei gy ≈ 7. */
+export const LANES_X = [3.6, 6.9, 10.2, 13.5, 16.8, 20.1];
+export const PIN_Y = 2.55;
+const TABLE_Y = 11.5;
 
+/** Tische stehen direkt in der Verlängerung der Bahnen (Sitzen & Spielen). Index 0 = Held-Tisch der vier Freunde. */
 export const TABLES = [
-  {x: 6.2, y: 10.8}, // 0: Freunde (Held-Tisch)
-  {x: 10.6, y: 13.1},
-  {x: 11.4, y: 9.5},
-  {x: 15.4, y: 11.9},
-  {x: 19.2, y: 9.9},
-  {x: 19.0, y: 13.7},
+  {x: LANES_X[1], y: TABLE_Y},
+  {x: LANES_X[2], y: TABLE_Y},
+  {x: LANES_X[3], y: TABLE_Y},
+  {x: LANES_X[4], y: TABLE_Y},
+  {x: LANES_X[5], y: TABLE_Y},
+  {x: LANES_X[0], y: TABLE_Y},
 ];
-export const BAR = {x: 1.2, y: 11.7};
+export const BAR = {x: 1.2, y: 11.9};
 
 const LOOKS: Look[] = [
   {skin: SKIN[0], hair: '#2B1E1A', hs: 'short', shirt: '#2DD4FF'},
@@ -45,14 +46,12 @@ const LOOKS: Look[] = [
   {skin: SKIN[4], hair: '#5B3A24', hs: 'bun', shirt: '#2F7F86'},
 ];
 
-const SEATS = {w: [-1.18, 0], n: [0, -1.18], e: [1.18, 0], s: [0, 1.18]} as const;
-
-// Streiks: Bahn, Startzeit, Treffer
+// Strikes: Bahn-Index, Startposition (gy), Startzeit, Trefferzeit
 export type Strike = {lane: number; from: number; start: number; hit: number};
 export const STRIKES: Strike[] = [
-  {lane: 2, from: 13.6, start: 0.35, hit: 2.9},
-  {lane: 1, from: 9.0, start: 22.45, hit: 23.55},
-  {lane: 3, from: 12.4, start: 50.35, hit: 51.5},
+  {lane: 2, from: 8.2, start: 0.35, hit: 2.9},
+  {lane: 1, from: 6.2, start: 22.45, hit: 23.55},
+  {lane: 3, from: 6.6, start: 50.35, hit: 51.5},
 ];
 
 export const modeFor = (i: number, t: number): 'off' | 'menu' | 'happy' | 'event' | 'ad' => {
@@ -114,6 +113,13 @@ const Defs: React.FC = () => (
       <feGaussianBlur stdDeviation="5" result="b" />
       <feMerge><feMergeNode in="b" /><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
     </filter>
+    {['#e5445a', '#2f6bff', '#34c47c', '#ff9a3c', '#14b8c4', '#a855f7'].map((c, i) => (
+      <radialGradient key={i} id={`ballC${i}`} cx="0.32" cy="0.3" r="0.9">
+        <stop offset="0" stopColor={lighten(c, 0.5)} />
+        <stop offset="0.5" stopColor={c} />
+        <stop offset="1" stopColor={darken(c, 0.55)} />
+      </radialGradient>
+    ))}
     <linearGradient id="skyG" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stopColor="#0a1030" />
       <stop offset="1" stopColor="#14264e" />
@@ -162,138 +168,179 @@ const buildStatic = () => {
   cur.push(flat('curb1', 22.5, -26, 22.8, 44, 0.0, '#2a3a6c'));
   cur.push(flat('curb2', 28.6, -26, 28.9, 44, 0.0, '#2a3a6c'));
 
-  // --- Halle: Boden
-  cur.push(flat('hf', 0, 0, HW, HD, 0, '#1a1646'));
-  cur.push(flat('lounge', 0, 8.2, HW, HD, 0.005, '#2a2062'));
-  let carpet = '';
-  for (let x = 0; x <= HW; x += 1) carpet += pathOf([[x - 0.02, 8.2, 0.01], [x + 0.02, 8.2, 0.01], [x + 0.02, HD, 0.01], [x - 0.02, HD, 0.01]]);
-  for (let y = 8.2; y <= HD; y += 1) carpet += pathOf([[0, y - 0.02, 0.01], [HW, y - 0.02, 0.01], [HW, y + 0.02, 0.01], [0, y + 0.02, 0.01]]);
-  cur.push(<path key="carpet" d={carpet} fill="rgba(255,255,255,.05)" />);
-  cur.push(flat('walkway', 0, 7.45, HW, 8.2, 0.005, '#3a3078'));
-  cur.push(flat('walkway2', 0, 7.45, HW, 7.5, 0.007, '#2dd4ff', {opacity: 0.7}));
-
-  // --- Bahnen
-  LANE_C.forEach((cy, i) => {
-    cur.push(flat(`gut${i}`, 0.2, cy - 0.76, LANE_X1 + 0.3, cy + 0.76, 0.01, '#0b0928'));
-    cur.push(flat(`pit${i}`, 0.0, cy - 0.58, LANE_X0, cy + 0.58, 0.012, '#04020f'));
-    cur.push(flat(`ln${i}`, LANE_X0, cy - 0.58, LANE_X1, cy + 0.58, 0.02, '#dba766'));
-    cur.push(flat(`ap${i}`, 14.0, cy - 0.58, LANE_X1, cy + 0.58, 0.022, '#efc78f'));
-    cur.push(flat(`dk${i}`, LANE_X0, cy - 0.58, 3.4, cy + 0.58, 0.022, '#cd9556'));
+  // --- Halle: Boden (warm, nach Referenzbild)
+  cur = floors;
+  const LX = LANES_X;
+  cur.push(flat('hf', 0, 0, HW, HD, 0, '#1b151d'));
+  cur.push(flat('lounge', 0, 9.0, HW, HD, 0.004, '#4a403f'));
+  let tiles = '';
+  for (let x = 0; x <= HW; x += 1.1) tiles += pathOf([[x - 0.015, 8.9, 0.006], [x + 0.015, 8.9, 0.006], [x + 0.015, HD, 0.006], [x - 0.015, HD, 0.006]]);
+  for (let y = 8.9; y <= HD; y += 1.1) tiles += pathOf([[0, y - 0.015, 0.006], [HW, y - 0.015, 0.006], [HW, y + 0.015, 0.006], [0, y + 0.015, 0.006]]);
+  cur.push(<path key="tiles" d={tiles} fill="rgba(255,255,255,.05)" />);
+  // Warmes Licht unter den Tischen
+  TABLES.forEach((tb, i) => cur.push(<polygon key={`pool${i}`} points={pts(ring(tb.x, tb.y, 0.012, 2.1, 32))} fill="rgba(255,170,90,.17)" />));
+  LX.forEach((cx, i) => {
+    cur.push(flat(`gut${i}`, cx - 1.42, 0.4, cx + 1.42, 9.0, 0.01, '#120d16'));
+    cur.push(flat(`glow${i}`, cx - 1.42, 1.0, cx + 1.42, 8.9, 0.011, i % 2 ? '#a35bff' : '#58b6ff', {opacity: 0.16}));
+    cur.push(flat(`pit${i}`, cx - 1.2, 0.4, cx + 1.2, 1.0, 0.012, '#07040b'));
+    cur.push(flat(`ln${i}`, cx - 1.2, 1.0, cx + 1.2, 8.8, 0.02, '#e9c28b'));
+    cur.push(flat(`ap${i}`, cx - 1.2, 6.7, cx + 1.2, 8.8, 0.022, '#f5dcb0'));
+    cur.push(flat(`dk${i}`, cx - 1.2, 1.0, cx + 1.2, 3.2, 0.022, '#dbb076'));
     let boards = '';
-    for (let o = -0.48; o <= 0.49; o += 0.16) boards += pathOf([[LANE_X0, cy + o - 0.004, 0.03], [LANE_X1, cy + o - 0.004, 0.03], [LANE_X1, cy + o + 0.004, 0.03], [LANE_X0, cy + o + 0.004, 0.03]]);
-    cur.push(<path key={`bd${i}`} d={boards} fill="rgba(110,60,20,.28)" />);
-    cur.push(flat(`sheen${i}`, LANE_X0, cy - 0.16, LANE_X1, cy + 0.16, 0.035, 'rgba(255,255,255,.13)'));
-    cur.push(flat(`el${i}`, LANE_X0, cy - 0.64, LANE_X1, cy - 0.58, 0.04, i % 2 ? C.magenta : C.cyan));
-    cur.push(flat(`er${i}`, LANE_X0, cy + 0.58, LANE_X1, cy + 0.64, 0.04, i % 2 ? C.cyan : C.magenta));
-    cur.push(flat(`foul${i}`, 13.95, cy - 0.58, 14.05, cy + 0.58, 0.05, '#ffffff', {opacity: 0.9}));
-    for (let a = -3; a <= 3; a++) {
-      const ax = 8.6 + (3 - Math.abs(a)) * 0.35;
-      cur.push(poly(`ar${i}${a}`, [[ax - 0.28, cy + a * 0.14, 0.05], [ax + 0.12, cy + a * 0.14 - 0.06, 0.05], [ax + 0.12, cy + a * 0.14 + 0.06, 0.05]], '#6b3d1a', {opacity: 0.55}));
+    for (let o = -1.1; o <= 1.11; o += 0.22) boards += pathOf([[cx + o - 0.004, 1.0, 0.03], [cx + o + 0.004, 1.0, 0.03], [cx + o + 0.004, 8.8, 0.03], [cx + o - 0.004, 8.8, 0.03]]);
+    cur.push(<path key={`bd${i}`} d={boards} fill="rgba(120,70,25,.26)" />);
+    cur.push(flat(`sheen${i}`, cx - 0.4, 1.0, cx + 0.4, 8.8, 0.032, 'rgba(255,255,255,.2)'));
+    cur.push(flat(`warm${i}`, cx - 1.2, 3.4, cx + 1.2, 6.2, 0.033, 'rgba(255,160,80,.14)'));
+    cur.push(flat(`rl${i}`, cx - 1.29, 1.0, cx - 1.2, 8.8, 0.04, '#e6efff', {opacity: 0.9}));
+    cur.push(flat(`rr${i}`, cx + 1.2, 1.0, cx + 1.29, 8.8, 0.04, '#e6efff', {opacity: 0.9}));
+    cur.push(flat(`pg${i}`, cx - 1.2, 0.4, cx + 1.2, 2.7, 0.035, 'rgba(190,100,255,.3)'));
+    cur.push(flat(`foul${i}`, cx - 1.2, 6.7, cx + 1.2, 6.78, 0.05, '#ffffff', {opacity: 0.9}));
+    for (let a2 = -3; a2 <= 3; a2++) {
+      const ax = cx + a2 * 0.3;
+      const ay = 4.7 + (3 - Math.abs(a2)) * 0.28;
+      cur.push(poly(`ar${i}${a2}`, [[ax, ay - 0.34, 0.05], [ax - 0.1, ay + 0.14, 0.05], [ax + 0.1, ay + 0.14, 0.05]], '#7a4a22', {opacity: 0.5}));
     }
   });
-  // Neon-Glow unter den Bahnen
-  cur.push(flat('laneGlow', 0.9, 0.9, LANE_X1, 7.4, 0.001, 'rgba(255,61,154,.08)'));
 
+  // --- Wände (hell abgesetzte Kappen wie im Referenzbild)
   cur = hw;
-  // --- Wände (Rückwände als dünne Boxen mit Kappe)
-  const capTop = '#efe0c6';
-  cur.push(box('wl', -0.4, -0.4, 0, 0.4, HD + 0.4, HH, {top: capTop, left: '#cdb894', right: '#3a2860'}));
-  cur.push(box('wr', -0.4, -0.4, 0, HW + 0.4, 0.4, HH, {top: capTop, left: '#2b2966', right: '#cdb894'}));
-  // linke Wand (Innenseite: Ebene gx=0)
-  cur.push(wallL('wlWood', 0, 0, HD, 0, 1.35, '#7a4b37'));
-  cur.push(wallL('wlTrim', 0, 0, HD, 1.35, 1.45, '#efe0c6'));
-  cur.push(wallL('wlNeon', 0, 0, HD, 4.2, 4.3, C.cyan, {opacity: 0.95}));
-  cur.push(wallL('wlNeonG', 0, 0, HD, 4.05, 4.45, C.cyan, {opacity: 0.18}));
-  // rechte Wand (Innenseite: Ebene gy=0)
-  cur.push(wallR('wrWood', 0, 0, HW, 0, 1.35, '#6a4252'));
-  cur.push(wallR('wrTrim', 0, 0, HW, 1.35, 1.45, '#efe0c6'));
-  cur.push(wallR('wrNeon', 0, 0, HW, 4.2, 4.3, C.magenta, {opacity: 0.95}));
-  cur.push(wallR('wrNeonG', 0, 0, HW, 4.05, 4.45, C.magenta, {opacity: 0.18}));
-  // Fenster in der rechten Wand
-  [[2.0, 4.4], [5.0, 7.4], [14.7, 17.1], [18.1, 20.5]].forEach(([a, b], i) => {
-    cur.push(wallR(`wf${i}`, 0.004, a - 0.12, b + 0.12, 1.75, 4.0, '#efe0c6'));
-    cur.push(wallR(`wg${i}`, 0.006, a, b, 1.9, 3.88, '#13306a'));
-    cur.push(wallR(`wgl${i}`, 0.007, a, b, 2.9, 3.88, '#1d4a8c', {opacity: 0.6}));
-    cur.push(wallR(`wm${i}`, 0.008, (a + b) / 2 - 0.04, (a + b) / 2 + 0.04, 1.9, 3.88, '#efe0c6'));
-    cur.push(wallR(`wm2${i}`, 0.008, a, b, 2.84, 2.92, '#efe0c6'));
-  });
-  // Neon-Schriftzug BOWLING
+  const capTop = '#cfc9c0';
+  cur.push(box('wl', -0.4, -0.4, 0, 0.4, HD + 0.4, HH, {top: capTop, left: '#8d8780', right: '#6d4733'}));
+  cur.push(box('wr', -0.4, -0.4, 0, HW + 0.4, 0.4, HH, {top: capTop, left: '#2a2838', right: '#8d8780'}));
+  // linke Wand: Holzpaneel, Neon-Pin, Bilder, Wandleuchten
+  cur.push(wallL('wlBase', 0, 0, HD, 0, HH, '#6d4733'));
+  cur.push(wallL('wlBand', 0, 0, HD, 3.7, HH, '#7d5440'));
+  let slats = '';
+  for (let y = 0.3; y < HD; y += 0.55) slats += pathOf([[0, y, 0.0], [0, y + 0.03, 0.0], [0, y + 0.03, HH], [0, y, HH]]);
+  cur.push(<path key="slats" d={slats} fill="rgba(0,0,0,.2)" />);
+  cur.push(wallL('wlGlow', 0, 0, HD, 4.3, 4.4, '#ffb066', {opacity: 0.95}));
+  cur.push(wallL('wlGlowB', 0, 0, HD, 4.0, 4.6, '#ffb066', {opacity: 0.14}));
   cur.push(
-    <g key="signR" transform={wallRM(8.1, 0.01, 4.0)}>
-      <rect x="0" y="0" width="470" height="200" rx="16" fill="#120d34" opacity="0.85" />
-      <text x="235" y="158" textAnchor="middle" fontFamily="Anton" fontSize="150" fill="none" stroke="#ff3d9a" strokeWidth="5" filter="url(#neonGlow)">BOWLING</text>
-      <text x="235" y="158" textAnchor="middle" fontFamily="Anton" fontSize="150" fill="#ffd9ec" opacity="0.92">BOWLING</text>
+    <g key="neonPin" transform={wallLM(0, 8.4, 3.9)}>
+      <g filter="url(#neonGlow)" fill="none" stroke="#ff8a3c" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M60 10C44 10 38 28 44 44C50 58 36 72 30 100C24 130 30 150 36 164H84C90 150 96 130 90 100C84 72 70 58 76 44C82 28 76 10 60 10Z" transform="translate(0 -2)" />
+        <circle cx="150" cy="128" r="36" />
+        <circle cx="140" cy="116" r="4" /><circle cx="154" cy="112" r="4" /><circle cx="150" cy="128" r="4" />
+      </g>
     </g>,
   );
-  // Pinsetter-Haube + Anzeigen
-  cur.push(box('hood', 0, 0.3, 1.7, 1.5, 7.2, 0.9, {top: '#3a2e78', left: '#2a2160', right: '#241c52'}));
-  cur.push(wallR('hoodN', 0.3 + 7.2 + 0.001, 0.0, 1.5, 1.8, 2.5, 'none'));
-  LANE_C.forEach((cy, i) => {
-    // Bahn-Nummer-Anzeige an der Haube
-    cur.push(poly(`hn${i}`, [[1.5, cy - 0.5, 2.05], [1.5, cy + 0.5, 2.05], [1.5, cy + 0.5, 2.45], [1.5, cy - 0.5, 2.45]], i % 2 ? '#ff3d9a' : '#2dd4ff'));
-  });
-  cur.push(poly('hoodStrip', [[1.5, 0.3, 1.74], [1.5, 7.5, 1.74], [1.5, 7.5, 1.8], [1.5, 0.3, 1.8]], '#2dd4ff', {opacity: 0.95}));
-
-  // Backbar + TV-Menütafeln an der linken Wand
-  cur.push(box('shelf1', 0, 8.8, 1.8, 0.5, 5.8, 0.07, mat('#8a5640')));
-  cur.push(box('shelf2', 0, 8.8, 2.4, 0.5, 5.8, 0.07, mat('#8a5640')));
-  [1.87, 2.47].forEach((z, r) => {
-    for (let i = 0; i < 13; i++) {
-      const col = ['#2f9e6a', '#e8b34a', '#c45a3a', '#8fd0e8', '#a8508a'][(i + r) % 5];
-      cur.push(cyl(`bt${r}${i}`, 0.22, 9.05 + i * 0.42, z, 0.07, 0.34, {top: lighten(col, 0.3), left: col, right: darken(col, 0.3)}));
+  [[5.0, 3.9], [3.2, 3.9]].forEach(([yH, zT], i) =>
+    cur.push(
+      <g key={`art${i}`} transform={wallLM(0, yH, zT)}>
+        <rect x="0" y="0" width="120" height="170" rx="4" fill="#efe0c6" />
+        <rect x="9" y="9" width="102" height="152" fill={i ? '#e7c9a2' : '#1d2038'} />
+        <circle cx="62" cy="64" r="28" fill={i ? '#c4583f' : '#e5445a'} />
+        <path d="M9 161 L9 118 Q60 80 111 126 L111 161Z" fill={i ? '#8c6a4f' : '#34406e'} />
+      </g>,
+    ),
+  );
+  // rechte Wand: dunkle Rückwand mit Wandbild, Anzeigetafeln, Bahnnummern
+  cur.push(wallR('wrBase', 0, 0, HW, 0, HH, '#24212f'));
+  const mural: string[] = [];
+  for (let i = 0; i < 16; i++) {
+    const x0 = i * 135 - 30;
+    const c = ['#e4783a', '#7a4fb8', '#2e5aa8', '#d9466f', '#f0a04b'][i % 5];
+    mural.push(`<polygon points="${x0},150 ${x0 + 90 + (i % 3) * 30},20 ${x0 + 190},150" fill="${c}" opacity="0.72"/>`);
+  }
+  cur.push(<g key="mural" transform={wallRM(0, 0.008, 3.35)} dangerouslySetInnerHTML={{__html: mural.join('')}} />);
+  cur.push(wallR('wrBand', 0.006, 0, HW, 3.35, 3.45, '#ffb066', {opacity: 0.85}));
+  LX.forEach((cx, i) => {
+    cur.push(
+      <g key={`tv${i}`} transform={wallRM(cx - 1.05, 0.015, 4.5)}>
+        <rect x="-4" y="-4" width="209" height="118" rx="5" fill="#0b0b12" />
+        <rect x="2" y="2" width="197" height="106" fill="#0d1636" />
+        {i % 2 === 0 ? (
+          <g>
+            {[0, 1, 2, 3].map((r) => <rect key={r} x="12" y={14 + r * 22} width="176" height="12" fill={r === 1 ? '#e5445a' : '#2f6bff'} opacity="0.8" />)}
+          </g>
+        ) : (
+          <g>
+            <circle cx="100" cy="56" r="30" fill="#1c3f9a" />
+            <path d="M100 26 C92 26 90 36 92 44 C95 52 90 60 88 72 H112 C110 60 105 52 108 44 C110 36 108 26 100 26Z" fill="#fff" />
+          </g>
+        )}
+      </g>,
+    );
+    cur.push(
+      <g key={`num${i}`} transform={wallRM(cx - 0.3, 0.015, 2.05)}>
+        <rect x="0" y="0" width="58" height="66" rx="6" fill="#111018" />
+        <text x="29" y="52" textAnchor="middle" fontFamily="Anton" fontSize="48" fill="#fff">{i + 1}</text>
+      </g>,
+    );
+    // Wandleuchten zwischen den Tafeln
+    if (i < LX.length - 1) {
+      const gx = cx + 1.65;
+      const p = P(gx, 0.02, 2.9);
+      cur.push(<ellipse key={`sc${i}`} cx={p.X} cy={p.Y} rx="46" ry="30" fill="rgba(255,196,120,.22)" />);
+      cur.push(wallR(`scb${i}`, 0.02, gx - 0.08, gx + 0.08, 2.8, 3.0, '#ffe3b0'));
     }
   });
-  [11.87, 14.67].forEach((yHigh, i) => {
+
+  // Regal mit Kugeln an der linken Wand
+  cur.push(box('shelfBody', 0, 3.0, 0, 0.7, 3.0, 1.75, {top: '#3a2a22', left: '#4a362b', right: '#2a1d17'}));
+  [0.18, 0.68, 1.18].forEach((z, r) => {
+    for (let i = 0; i < 6; i++) {
+      const p = P(0.45, 3.2 + i * 0.5, z + 0.22);
+      cur.push(ballColored(`sb${r}${i}`, p.X, p.Y, 9, (r * 2 + i) % 6));
+    }
+  });
+
+  // --- Bar an der linken Wand (Bestellung landet hier)
+  cur.push(box('shelf1', 0, 9.4, 1.8, 0.5, 5.2, 0.07, mat('#8a5640')));
+  cur.push(box('shelf2', 0, 9.4, 2.4, 0.5, 5.2, 0.07, mat('#8a5640')));
+  [1.87, 2.47].forEach((z, r) => {
+    for (let i = 0; i < 12; i++) {
+      const col = ['#2f9e6a', '#e8b34a', '#c45a3a', '#8fd0e8', '#a8508a'][(i + r) % 5];
+      cur.push(cyl(`bt${r}${i}`, 0.22, 9.65 + i * 0.42, z, 0.07, 0.34, {top: lighten(col, 0.3), left: col, right: darken(col, 0.3)}));
+    }
+  });
+  [12.1, 14.5].forEach((yHigh, i) => {
     cur.push(
-      <g key={`tv${i}`} transform={wallLM(0, yHigh, 4.05)}>
-        <rect x="-6" y="-6" width="256" height="118" rx="6" fill="#1a1a2a" />
-        <rect x="0" y="0" width="244" height="106" fill="#0b0f26" />
+      <g key={`tvm${i}`} transform={wallLM(0, yHigh, 4.05)}>
+        <rect x="-6" y="-6" width="230" height="118" rx="6" fill="#1a1a2a" />
+        <rect x="0" y="0" width="218" height="106" fill="#0b0f26" />
         {[0, 1, 2, 3, 4].map((r) => (
           <g key={r}>
             <rect x="14" y={12 + r * 18} width={80 + ((r * 37) % 60)} height="7" fill={r % 2 ? '#ffd27a' : '#fff'} opacity="0.85" />
-            <rect x="190" y={12 + r * 18} width="38" height="7" fill="#34e3a0" opacity="0.85" />
+            <rect x="170" y={12 + r * 18} width="34" height="7" fill="#34e3a0" opacity="0.85" />
           </g>
         ))}
       </g>,
     );
   });
   cur = floors;
-  // Tisch-Lichtinseln auf dem Boden
-  TABLES.forEach((tb, i) => cur.push(<polygon key={`pool${i}`} points={pts(ring(tb.x, tb.y, 0.012, 1.7, 30))} fill="rgba(255,214,150,.06)" />));
 
-  // --- Bar
-  add(BAR.x + 0.6 + 0.01, box('barC', 0.55, 8.9, 0, 1.45, 5.6, 1.15, {top: '#efe0c6', left: '#8a5640', right: '#6a3f2e'}));
-  add(BAR.x + 0.6 + 0.012, box('barTop', 0.45, 8.8, 1.15, 1.65, 5.8, 0.08, mat('#f6ead4')));
-  [10.0, 11.4, 12.8, 14.2].forEach((y, i) => add(2.9 + y + 0.1, cyl(`st${i}`, 3.0, y, 0, 0.26, 0.62, mat('#b9553b'))));
-  add(0.6 + 13.4, box('reg', 1.0, 13.2, 1.23, 0.5, 0.6, 0.32, mat('#232846')));
-  add(0.6 + 10.2, box('reg2', 1.0, 9.7, 1.23, 0.6, 0.5, 0.3, mat('#d9dcf0')));
-
-  // --- Lounge-Tische (statische Teile)
+  // --- Bahn-Ausstattung: Ball-Rückführung, Sitzbank, Tisch, Lampe, Stühle – alles direkt an der Bahn
+  LX.forEach((cx, i) => {
+    add(cx + 9.8, ballReturn(`br${i}`, cx, 9.0, i));
+    add(cx + 9.82, railBalls(`rb${i}`, cx, 9.0, 0.52, i * 2));
+    add(cx + 10.5, bench(`bn${i}`, cx, 10.0));
+  });
   TABLES.forEach((tb, i) => {
-    const mats = [W.terracotta, W.teal, W.terracotta, W.teal, W.terracotta, W.teal];
-    const sides = i === 0 ? (['w', 'n', 'e', 's'] as const) : i === 1 || i === 4 ? (['w', 'e'] as const) : (['n', 's'] as const);
-    sides.forEach((sd) => {
-      const [dx, dy] = SEATS[sd];
-      add(tb.x + tb.y + dx + dy + (sd === 'w' || sd === 'n' ? -0.4 : 0.4) - 0.01, chair(`ch${i}${sd}`, tb.x + dx * 0.92, tb.y + dy * 0.92, sd, mats[i]));
-    });
-    add(tb.x + tb.y, table(`tb${i}`, tb.x, tb.y, 0.85));
-    add(tb.x + tb.y + 0.3, tableware(`tw${i}`, tb.x, tb.y, 0.83, i));
+    add(tb.x + tb.y, rectTable(`tb${i}`, tb.x, tb.y));
+    add(tb.x + tb.y + 0.5, tableware(`tw${i}`, tb.x + 0.2, tb.y, 0.81, i));
+    add(tb.x + tb.y + 0.45, tableLamp(`lp${i}`, tb.x - 0.75, tb.y - 0.2, 0.81, 0));
+    if (i === 0) {
+      add(tb.x - 1.75 + tb.y, diningChair('chw', tb.x - 1.75, tb.y, 'w'));
+      add(tb.x + 1.75 + tb.y, diningChair('che', tb.x + 1.75, tb.y, 'e'));
+    }
   });
 
-  // --- Pflanzen / Deko
-  add(0.5 + 15.3, plant('pl1', 0.7, 14.6, 1.0));
-  add(21.3 + 7.6, plant('pl2', 21.3, 7.7, 1.1));
-  add(21.3 + 14.2, plant('pl3', 21.3, 14.4, 1.0));
+  // Bar-Tresen
+  add(BAR.x + 0.6 + 9.6, box('barC', 0.55, 9.6, 0, 1.45, 5.0, 1.15, {top: '#efe0c6', left: '#8a5640', right: '#6a3f2e'}));
+  add(BAR.x + 0.6 + 9.62, box('barTop', 0.45, 9.5, 1.15, 1.65, 5.2, 0.08, mat('#f6ead4')));
+  add(0.6 + 13.4, box('reg', 1.0, 13.2, 1.23, 0.5, 0.6, 0.32, mat('#232846')));
+  add(0.6 + 10.2, box('reg2', 1.0, 10.2, 1.23, 0.6, 0.5, 0.3, mat('#d9dcf0')));
 
-  // --- Balltreter zwischen den Bahnen
-  [0, 1, 2].forEach((i) => {
-    const y = (LANE_C[i] + LANE_C[i + 1]) / 2;
-    add(15.2 + y, box(`br${i}`, 14.4, y - 0.28, 0, 1.4, 0.56, 0.5, {top: '#2a2d52', left: '#3b3f74', right: '#23264a'}));
-    add(15.2 + y + 0.1, box(`brh${i}`, 14.7, y - 0.2, 0.5, 0.7, 0.4, 0.3, mat(['#e5445a', '#2dd4ff', '#ffb627'][i])));
-  });
+  // --- Pflanzen
+  add(0.7 + 1.6, plant('pl1', 0.9, 1.8, 1.1));
+  add(21.2 + 1.6, plant('pl2', 21.2, 1.5, 1.1));
+  add(21.3 + 8.4, plant('pl3', 21.3, 8.4, 1.0));
+  add(21.2 + 14.2, plant('pl4', 21.2, 14.3, 1.0));
+  add(1.0 + 7.5, plant('pl5', 1.2, 7.6, 1.2));
 
-  // --- Vordere Mauer (flach, wie im Referenzstil)
-  const rim = {top: '#f3e5cc', left: '#c8b08a', right: '#a58f6c'};
+  // --- Vordere Mauer
+  const rim = {top: '#d8d2c8', left: '#a8a29a', right: '#8a847c'};
   add(HW + HD + 5, box('rimF', 0, HD, 0, HW + 0.4, 0.4, 0.5, rim));
   add(HW + HD + 5.1, box('rimR', HW, 0, 0, 0.4, HD, 0.5, rim));
 
@@ -366,9 +413,9 @@ const getStatic = () => (STATIC ??= buildStatic());
 
 // ---------- Bewegte Teile ----------
 const waiterPath: [number, number, number][] = [
-  [0, 3.2, 12.2], [1.4, 9.0, 13.4], [2.4, 9.6, 12.3], [3.4, 10.2, 10.6], [4.2, 9.2, 12.9], [5.0, 10.4, 12.2],
-  [5.7, 11.7, 10.5], [6.5, 13.8, 11.3], [7.2, 14.3, 13.0], [7.8, 12.2, 13.6], [9.0, 8.4, 12.6], [10.0, 6.6, 12.9],
-  [11.0, 3.4, 12.2], [60, 3.4, 12.2],
+  [0, 2.8, 13.5], [1.6, 10.0, 13.3], [2.6, 10.6, 12.8], [3.4, 11.8, 13.6], [4.2, 13.4, 12.9], [5.0, 15.0, 13.6],
+  [5.8, 16.8, 12.9], [6.6, 18.6, 13.7], [7.2, 20.2, 12.9], [8.0, 17.0, 13.9], [9.2, 10.0, 13.9], [10.4, 4.6, 13.5],
+  [11.0, 3.0, 13.3], [60, 3.0, 13.3],
 ];
 const waiterAt = (t: number) => {
   for (let i = 0; i < waiterPath.length - 1; i++) {
@@ -379,7 +426,7 @@ const waiterAt = (t: number) => {
       return {x: lerp(x0, x1, u), y: lerp(y0, y1, u), vx: (x1 - x0) / (t1 - t0), vy: (y1 - y0) / (t1 - t0), moving: t1 - t0 < 3};
     }
   }
-  return {x: 3.4, y: 12.2, vx: 0, vy: 0, moving: false};
+  return {x: 3.0, y: 13.3, vx: 0, vy: 0, moving: false};
 };
 
 const buildDynamic = (t: number): Item[] => {
@@ -387,37 +434,32 @@ const buildDynamic = (t: number): Item[] => {
   const items: Item[] = [];
   const add = (k: number, n: React.ReactNode) => items.push({k, n});
 
-  // Gäste an Tischen
-  const waving = (i: number) => {
-    const startTimes = [0, 4.7, 5.3, 5.9, 6.5, 6.9];
-    return t > startTimes[i] && t < 9.5;
-  };
+  // Gäste: Bank auf der Bahnseite (2 Personen), am Held-Tisch zusätzlich zwei Stühle seitlich
   TABLES.forEach((tb, i) => {
-    const sides = i === 0 ? (['w', 'n', 'e', 's'] as const) : i === 1 || i === 4 ? (['w', 'e'] as const) : (['n', 's'] as const);
-    sides.forEach((sd, si) => {
-      const [dx, dy] = SEATS[sd];
+    const seats: {dx: number; dy: number; z: number}[] = [{dx: -0.55, dy: -1.3, z: 0.5}, {dx: 0.55, dy: -1.3, z: 0.5}];
+    if (i === 0) seats.push({dx: -1.75, dy: 0, z: 0.5}, {dx: 1.75, dy: 0, z: 0.5});
+    seats.forEach((sd, si) => {
       const look = LOOKS[(i * 3 + si * 2) % LOOKS.length];
       let pose: 'idle' | 'wave' | 'cheer' | 'laugh' = 'idle';
       if (i === 0) pose = t > 20.4 && t < 22.6 ? 'cheer' : t > 30.5 && t < 32.5 ? 'cheer' : t > 49.4 && t < 51 ? 'cheer' : 'laugh';
-      else if (i >= 1 && i <= 3 && waving(i) && si === 0) pose = 'wave';
-      const behind = sd === 'w' || sd === 'n';
-      add(tb.x + tb.y + dx + dy + (behind ? -0.7 : 0.7), person(`gp${i}${sd}`, tb.x + dx * 0.9, tb.y + dy * 0.9, 0.5, look, pose, frame, si * 1.7 + i));
+      else if (i >= 1 && i <= 3 && si === 0 && t > [0, 4.7, 5.3, 5.9][i] && t < 9.5) pose = 'wave';
+      add(tb.x + sd.dx + tb.y + sd.dy + 0.12, person(`gp${i}${si}`, tb.x + sd.dx, tb.y + sd.dy, sd.z, look, pose, frame, si * 1.7 + i));
     });
   });
 
   // Barkeeper
-  add(0.6 + BAR.y + 0.1, person('bk', 0.9, 11.6, 1.0, {skin: SKIN[2], hair: '#171717', hs: 'short', shirt: '#2a2d52', beard: true}, t > 21.5 && t < 22.4 ? 'cheer' : 'idle', frame, 0.7, 0.19));
+  add(0.6 + BAR.y + 0.1, person('bk', 0.9, BAR.y, 1.0, {skin: SKIN[2], hair: '#171717', hs: 'short', shirt: '#2a2d52', beard: true}, t > 21.5 && t < 22.4 ? 'cheer' : 'idle', frame, 0.7, 0.19));
 
   // Sprechblasen der wartenden Gäste
   [1, 2, 3].forEach((i, bi) => {
     const at = [4.7, 5.5, 6.3][bi];
     if (t < at || t > 9.6) return;
     const tb = TABLES[i];
-    const p = P(tb.x - 0.5, tb.y - 0.9, 2.2);
+    const p = P(tb.x - 0.55, tb.y - 1.3, 2.35);
     const s = clamp01((t - at) / 0.25);
     const e = 1 - Math.pow(1 - s, 3);
     const bob = Math.sin(t * 5 + i) * 3;
-    add(tb.x + tb.y + 2, (
+    add(tb.x + tb.y + 3, (
       <g key={`bub${i}`} transform={`translate(${p.X} ${p.Y + bob}) scale(${0.9 + 0.1 * e}) scale(${e})`}>
         <rect x="-34" y="-62" width="68" height="52" rx="18" fill="#fff" />
         <path d="M-6 -12 L0 4 L10 -12Z" fill="#fff" />
@@ -430,9 +472,9 @@ const buildDynamic = (t: number): Item[] => {
     ));
   });
 
-  // Kellner
+  // Kellner (läuft im Gang hinter den Tischen)
   const wp = waiterAt(t);
-  const dirRight = wp.vx - wp.vy > 0; // Bildschirm-x ≈ (vx − vy)
+  const dirRight = wp.vx - wp.vy > 0;
   const wpos = P(wp.x, wp.y, 0);
   add(wp.x + wp.y + 0.3, (
     <g key="waiter" transform={`translate(${wpos.X} ${wpos.Y}) scale(${dirRight ? 0.2 : -0.2} 0.2) translate(-160 -500)`}>
@@ -441,39 +483,37 @@ const buildDynamic = (t: number): Item[] => {
     </g>
   ));
 
-  // Strikes: Ball + Pins
+  // Strikes: Ball rollt entlang gy zu den Pins, Pins fliegen Richtung Wand
   STRIKES.forEach((s, si) => {
-    const cy = LANE_C[s.lane];
-    const rows = [0, 1, 2, 3];
+    const cx = LANES_X[s.lane];
     let n = 0;
-    rows.forEach((r) => {
+    for (let r = 0; r < 4; r++) {
       for (let c = 0; c <= r; c++) {
         n++;
-        const bx = PIN_X - r * 0.3;
-        const by = cy + (c - r / 2) * 0.34;
+        const by = PIN_Y - r * 0.5;
+        const bx = cx + (c - r / 2) * 0.62;
         let ox = 0, oy = 0, oz = 0, rot = 0;
         const p = Math.max(0, t - s.hit - r * 0.015);
         if (t > s.hit - 0.02 && t < s.hit + 1.8) {
           const rn = rand(n * 3.7 + s.lane + si * 11);
           const rn2 = rand(n * 7.1 + si * 5);
           const dir = (c - r / 2) * 0.9 + (rn - 0.5) * 1.8;
-          ox = -(0.6 + rn2 * 1.8) * p * 1.1;
-          oy = dir * 1.6 * p;
+          oy = -(0.2 + rn2 * 0.9) * p * 1.1;
+          ox = dir * 1.1 * p;
           oz = Math.max(0, 3.2 * p * (0.6 + rn2) - 6.5 * p * p);
           rot = dir * 200 * Math.min(p, 0.6) * (rn > 0.5 ? 1 : -1);
         }
         const pp = P(bx + ox, by + oy, oz);
-        const gone = t > s.hit + 1.6;
-        if (gone && t < s.hit + 1.8) continue;
+        if (t > s.hit + 1.6 && t < s.hit + 1.8) continue;
         add(bx + by + ox + oy + 0.02, pinSprite(`pin${si}${n}`, pp.X, pp.Y, 0.13, rot));
       }
-    });
+    }
     if (t >= s.start && t < s.hit + 0.12) {
       const u = clamp01((t - s.start) / (s.hit - s.start));
-      const bx = lerp(s.from, PIN_X + 0.1, u);
-      const by = cy + Math.sin(u * Math.PI) * 0.12;
+      const by = lerp(s.from, PIN_Y + 0.1, u);
+      const bx = cx + Math.sin(u * Math.PI) * 0.12;
       const pp = P(bx, by, 0.2);
-      add(bx + by + 0.05, ballSprite(`ball${si}`, pp.X, pp.Y - 5, 12, bx * 120));
+      add(bx + by + 0.05, ballSprite(`ball${si}`, pp.X, pp.Y - 5, 12, by * 120));
     }
   });
 
@@ -482,13 +522,13 @@ const buildDynamic = (t: number): Item[] => {
     const u = (t - 20.55) / 1.45;
     const e = IN_OUT(clamp01(u));
     const x = lerp(TABLES[0].x, 1.2, e);
-    const y = lerp(TABLES[0].y, 11.6, e);
+    const y = lerp(TABLES[0].y, BAR.y, e);
     const z = 1.0 + Math.sin(u * Math.PI) * 1.4 + e * 0.4;
     const pp = P(x, y, z);
     const trail: React.ReactNode[] = [];
     for (let i = 1; i <= 8; i++) {
       const ue = IN_OUT(clamp01(u - i * 0.035));
-      const q = P(lerp(TABLES[0].x, 1.2, ue), lerp(TABLES[0].y, 11.6, ue), 1.0 + Math.sin((u - i * 0.035) * Math.PI) * 1.4 + ue * 0.4);
+      const q = P(lerp(TABLES[0].x, 1.2, ue), lerp(TABLES[0].y, BAR.y, ue), 1.0 + Math.sin((u - i * 0.035) * Math.PI) * 1.4 + ue * 0.4);
       trail.push(<circle key={i} cx={q.X} cy={q.Y} r={9 - i * 0.8} fill="#34e3a0" opacity={0.5 - i * 0.05} />);
     }
     add(2000, (
@@ -502,13 +542,13 @@ const buildDynamic = (t: number): Item[] => {
     ));
   }
 
-  // Display-Miniaturen
+  // Display-Miniaturen auf den Tischen
   TABLES.forEach((tb, i) => {
     const mode = modeFor(i, t);
-    add(tb.x + tb.y + 0.4, miniDisplay(`md${i}`, tb.x, tb.y, 0.83, mode, t, i * 1.3, i === 0 ? 1.15 : 1));
+    add(tb.x + tb.y + 0.6, miniDisplay(`md${i}`, tb.x + 0.1, tb.y - 0.05, 0.81, mode, t, i * 1.3, i === 0 ? 1.15 : 1));
   });
 
-  // Fahrendes Auto auf der Straße
+  // Fahrende Autos auf der Straße
   const cy = ((t * 2.2 + 4) % 60) - 22;
   items.push({k: 26.8 + cy + 1, n: carAlongY('drive', 26.3, cy, '#e8b34a', true), b: behindWalls(26.8, cy + 1)});
   const cy2 = 40 - ((t * 2.8 + 11) % 62);
